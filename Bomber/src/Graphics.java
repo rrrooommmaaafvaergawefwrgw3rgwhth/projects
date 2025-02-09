@@ -1,0 +1,285 @@
+import org.lwjgl.Version;
+import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.opengl.GL;
+
+import java.awt.*;
+
+import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.system.MemoryUtil.NULL;
+
+public class Graphics {
+
+    public enum  RunMode {
+        SINGLE_FRAME,
+        FRAME_LOOP
+    }
+
+    private long window;
+    private int windowWidth = 800;  // Default width
+    private int windowHeight = 600; // Default height
+    private String title;
+    public Graphics(String title) {
+        this.title = title;
+    }
+
+
+    public void run(RunMode runMode) {
+        System.out.println("Запуск LWJGL " + Version.getVersion() + "!");
+
+        init();
+        switch (runMode) {
+            case SINGLE_FRAME:
+                runSingleFrame();
+                break;
+            case FRAME_LOOP:
+                runFrameLoop();
+                break;
+        }
+
+        // Free the window callbacks and destroy the window
+        glfwFreeCallbacks(window);
+        glfwDestroyWindow(window);
+
+        // Terminate GLFW and free the error callback
+        glfwTerminate();
+        glfwSetErrorCallback(null).free();
+    }
+
+    private void init() {
+        glfwSetErrorCallback(GLFWErrorCallback.createPrint(System.err));
+        if (!glfwInit())
+            throw new IllegalStateException("Ошибка при подготовке к запуску!");
+
+        window = glfwCreateWindow(windowWidth, windowHeight, title, NULL, NULL);
+        glfwMakeContextCurrent(window);
+        GL.createCapabilities();
+
+        updateViewport();
+
+        // Set the clear color
+        glClearColor(1f, 1f, 1f, 1f);
+
+        setWindowCallback();
+        glfwShowWindow(window);
+    }
+
+    private void updateViewport() {
+        int m = Math.min(windowWidth, windowHeight);
+        glViewport( (windowWidth-m)/2,
+                    (windowHeight-m)/2, m, m);
+    }
+
+    public void setWindowCallback() {
+        glfwSetWindowSizeCallback(window, (window, width, height) -> {
+            windowWidth = width;
+            windowHeight = height;
+            updateViewport();
+        });
+    }
+
+    public void drawFrame() {
+
+    }
+
+    public void runSingleFrame() {
+        glClear(GL_COLOR_BUFFER_BIT);
+        drawFrame();
+        glfwSwapBuffers(window);
+        while (!glfwWindowShouldClose(window)) {
+            glfwPollEvents();
+        }
+    }
+    public void runFrameLoop() {
+        while (!glfwWindowShouldClose(window)) {
+            glClear(GL_COLOR_BUFFER_BIT);
+            drawFrame();
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        }
+    }
+
+    public static void drawGrid(int N, int M, float W, float H) {
+        glPushMatrix();
+        glTranslatef(-1, -1, 0);
+        glScalef(2, 2, 1);
+        //glRotatef(270,0,0, 1);
+        glBegin(GL_QUADS);
+        //glLineWidth(2.0f);
+        float clrR = (float) Math.random();
+        float clrG0 = (float) Math.random();
+        float clrB = (float) Math.random();
+        float dR = Math.max(0,(float) ((0.98-clrR)/M));
+        float dG = Math.max(0,(float) ((0.98-clrG0)/N));
+        float y1 = 0f;
+        for (int i=0; i<M; i++) {
+            float y2 = y1+H;
+            float x1 = 0f;
+            float clrG = clrG0;
+            for (int j=0; j<N; j++) {
+                float x2 = x1+W;
+                glColor3f(clrR, clrG, clrB);
+                putRect(x1, y1, x2, y2);
+                x1 = x2;
+                clrG+=dG;
+            }
+            y1 = y2;
+            clrR+=dR;
+        }
+        glEnd();
+        glPopMatrix();
+    }
+
+    public static void putRect(float x1, float y1, float x2, float y2) {
+        glVertex2f(x1, y1);
+        glVertex2f(x1, y2);
+        glVertex2f(x2, y2);
+        glVertex2f(x2, y1);
+    }
+
+    public static void putColor(Color clr) {
+        glColor3f(clr.getRed() / 256f, clr.getGreen() / 256f, clr.getBlue() / 256f);
+    }
+
+
+    public static void drawRound(float cx, float cy, float radius,
+                           int N, double startAngle,
+                           float BR, float BG, float BB,
+                           float LR, float LG, float LB,
+                           float lineWidth) {
+        glPushMatrix();
+        glTranslatef(cx, cy, 0);
+        glScalef(radius, radius, 1);
+        glBegin(GL_TRIANGLE_FAN);
+        glColor3f(BR, BG, BB);
+        putNPolyPoints(N, startAngle);
+        glEnd();
+        glBegin(GL_LINE_LOOP);
+        glColor3f(LR, LG, LB);
+        glLineWidth(lineWidth);
+        putNPolyPoints(N, startAngle);
+        glEnd();
+        glPopMatrix();
+    }
+
+    public static void drawNPoly(float cx, float cy, float radius,
+                           int N, double startAngle) {
+        glPushMatrix();
+        glTranslatef(cx, cy, 0);
+        glScalef(radius, radius, 1);
+        glBegin(GL_LINE_LOOP);
+        putNPolyPoints(N, startAngle);
+        glEnd();
+        glPopMatrix();
+    }
+
+    public static void drawNPolyFilled(float cx, float cy, float radius,
+                                 int N, double startAngle) {
+        glPushMatrix();
+        glTranslatef(cx, cy, 0);
+        glScalef(radius, radius, 1);
+        glBegin(GL_TRIANGLE_FAN);
+        glVertex2f(0, 0);
+        putNPolyPoints(N, startAngle);
+        glEnd();
+        glPopMatrix();
+    }
+
+    public static void putNPolyPoints(int N, double startAngle) {
+        double angle = startAngle, da =  2 * Math.PI  / N;
+        for(int i = 0; i <= N; i++){
+            float pX = (float)Math.cos(angle);
+            float pY = (float)Math.sin(angle);
+            glVertex2f(pX, pY);
+            angle += da;
+        }
+    }
+
+    public static void drawTriangles_GL_TRIANGLE_FAN() {
+        glBegin(GL_TRIANGLE_FAN);
+        glColor3f(1f, 0.5f, 0.25f); // оранжевый
+        glVertex2f(0f, 0f);
+        glVertex2f(-0.5f, -0.25f);
+        glVertex2f(0.5f, -0.25f);
+        glVertex2f(-0.5f, 0.25f);
+        glVertex2f(0.5f, 0.25f);
+        glEnd();
+    }
+
+    public static void drawTriangles_GL_TRIANGLE_STRIP() {
+        glBegin(GL_TRIANGLE_STRIP);
+        glColor3f(1f, 0.5f, 0.25f); // оранжевый
+        glVertex2f(-0.5f, -0.25f);
+        glVertex2f(0.5f, -0.25f);
+        glColor3f(1f, 0f, 0.5f); // розовый
+        glVertex2f(0f, 0f);
+        glVertex2f(-0.5f, 0.25f);
+        glColor3f(1f, 1f, 0f); // жёлтый
+        glVertex2f(0.5f, 0.25f);
+        glEnd();
+    }
+
+
+
+    public static void drawTriangles_GL_TRIANGLES() {
+        glBegin(GL_TRIANGLES);
+        glColor3f(1f, 0.5f, 0.25f); // оранжевый
+        glVertex2f(-0.5f, -0.25f);
+        glVertex2f(0f, 0f);
+        glVertex2f(-0.5f, 0.25f);
+        glColor3f(1f, 0f, 0.5f); // розовый
+        glVertex2f(0.5f, -0.25f);
+        glVertex2f(0f, 0f);
+        glVertex2f(0.5f, 0.25f);
+        glEnd();
+    }
+
+    public static void drawCenteredRectangle() {
+        // Задаём габариты
+        float rectWidth = 1.0f; // Ширина
+        float rectHeight = 0.5f; // Высота
+
+        // Задаём границы прямоугольника
+        // Центрирование по горизонтали
+        float left = -rectWidth / 2;
+        float right = rectWidth / 2;
+        // Центрирование по вертикали
+        float bottom = -rectHeight / 2;
+        float top = rectHeight / 2;
+
+        glPointSize(10.0f);
+        glBegin(GL_QUADS);
+
+        glLineWidth(2.0f);
+        glColor3f(0f, 0f, 1f); // Синий цвет (R=0, G=0, B=1)
+        glVertex2f(left, bottom);
+        //glColor3f(1.0f, 1.0f, 1.0f);
+        glVertex2f(right, bottom);
+        //glColor3f(0.0f, 1.0f, 0.0f);
+        glVertex2f(right, top);
+        //glColor3f(1.0f, 0.0f, 0.0f);
+        glVertex2f(left, top);
+        glEnd();
+    }
+
+    public static void drawDiagonalLines() {
+        // Первый отрезок
+        glLineWidth(2.0f);
+        glColor3f(1f, 0f, 0f); // Красный цвет (R=1, B=G=0)
+        glBegin(GL_LINES);
+        glVertex2f(-0.5f, -0.25f);
+        glVertex2f(0.5f, 0.25f);
+        glEnd();
+
+        // Второй отрезок
+        glLineWidth(4.0f);
+        glColor3f(0f, 1f, 0f); // Зелёный цвет (R=0, G=1, B=0)
+        glBegin(GL_LINES);
+        glVertex2f(-0.5f, 0.25f);
+        glVertex2f(0.5f, -0.25f);
+        glEnd();
+    }
+
+
+}

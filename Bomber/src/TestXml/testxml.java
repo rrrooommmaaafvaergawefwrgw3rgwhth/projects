@@ -10,7 +10,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.Console;
 import java.io.File;
 
-public class xml {
+public class testxml {
     public static void main(String[] args) throws  Exception
     {
 

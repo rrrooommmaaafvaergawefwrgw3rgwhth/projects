@@ -8,17 +8,16 @@ public class Main_2024_12_15 {
         private GameBoard createGameBoard() {
             final GameBoard gameBoard = new GameBoard(20, 20);
 
-            /*
-            GameBoard gameBoard;
-            try {
-                gameBoard = new GameBoard("C:\\Users\\Ромчик\\Desktop\\GameBoard.xml");
 
-            } catch (Exception e) {
-                //throw new RuntimeException(e);
-                System.out.println(e.toString());
-                gameBoard = null;
-            }
-             */
+//            GameBoard gameBoard;
+//            try {
+//                gameBoard = new GameBoard("C:\\Users\\Ромчик\\Documents\\Projects\\Bomber\\src\\GameBoard.xml");
+//
+//            } catch (Exception e) {
+//                //throw new RuntimeException(e);
+//                System.out.println(e.toString());
+//                gameBoard = null;
+//            }
 
             return gameBoard;
 

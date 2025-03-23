@@ -34,7 +34,15 @@ implements IDrawable {
 
         putBrickcellWallH (6, 7, 5);
 
-
+        try {
+            setCellsRC(9, 9, new BitmapCell("pq"));
+            setCellsRC(9, 10, new BitmapCell("Щит"));
+            setCellsRC(12, 7, new BitmapCell("Злющий злодеянин"));
+            setCellsRC(14, 3, new BitmapCell("BmB"));
+            setCellsRC(14, 4, new BitmapCell("Бомба"));
+        } catch (Exception e) {
+            System.out.println(e);
+        }
 
     }
 

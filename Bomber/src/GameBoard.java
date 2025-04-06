@@ -1,9 +1,15 @@
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.awt.*;
 import java.io.File;
+private Cell m_Cells[][];
+private Cell[][] m_Cells;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -17,23 +23,31 @@ implements IDrawable {
     public Cell defaultCell = new EmptyCell();
 
     public GameBoard(int cellRows, int cellColumns) {
-        final float GBW = 0.85f, GBH=0.85f;
-        this.m_Cells = new Cell[cellRows][cellColumns];
         this.cellRows = cellRows;
         this.cellColumns = cellColumns;
-        cellWidth  = GBW/cellColumns;
-        cellHeight = GBH/cellRows;
+        initGBSize();
+        putDemoGameboardItems();
+
+    }
+
+    private void initGBSize() {
+        final float GBW = 0.85f, GBH = 0.85f;
+        this.m_Cells = new Cell[cellRows][cellColumns];
+        cellWidth = GBW / cellColumns;
+        cellHeight = GBH / cellRows;
         cellHeight = cellWidth = Math.min(cellWidth, cellHeight);
-        cellOffsetX = (1.0f-cellWidth*cellColumns)*0.5f;
-        cellOffsetY = (1.0f-cellHeight*cellRows)*0.5f;
+        cellOffsetX = (1.0f - cellWidth * cellColumns) * 0.5f;
+        cellOffsetY = (1.0f - cellHeight * cellRows) * 0.5f;
         putWallBorders();
+    }
 
-        putWallH(2, 2, 1);
-        putWallH(4, 3, 2);
-        putWallH(3, 5, 3);
-
-        putBrickcellWallH (6, 7, 5);
-
+    public GameBoard(String filePath) throws Exception {
+        final Element docElem = loadXml(filePath);
+        this.cellRows       = Integer.parseInt( docElem.getAttribute("Rows"));
+        this.cellColumns    = Integer.parseInt( docElem.getAttribute("Cols"));
+        initGBSize();
+        loadFromXml(docElem);
+    }
         try {
             setCellsRC(9, 9, new BitmapCell("pq"));
             setCellsRC(9, 10, new BitmapCell("Щит"));
